@@ -120,16 +120,32 @@ jobs:
         platform_version: 11
         toolset: clang
 
+    - name: Cache Boost (Windows)
+      if: runner.os == 'Windows'
+      id: boost-cache-windows
+      uses: actions/cache@v4
+      with:
+        path: C:\local\boost_1_83_0\boost
+        key: boost-1.83.0-headers-windows
+
     - name: Boost headers (Windows)
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
-        $boost_ver = "1.83.0"
-        $boost_dir = "boost_$($boost_ver -replace '\.','_')"
-        Invoke-WebRequest -Uri "https://archives.boost.io/release/$boost_ver/source/${boost_dir}.zip" -OutFile boost.zip
-        New-Item -ItemType Directory -Force -Path C:\local | Out-Null
-        Expand-Archive -Path boost.zip -DestinationPath C:\local
-        echo "BOOST_ROOT=C:\local\$boost_dir" >> $env:GITHUB_ENV
+        $boost_dir = "C:\local\boost_1_83_0"
+        if (-not (Test-Path "$boost_dir\boost")) {
+          Invoke-WebRequest -Uri "https://archives.boost.io/release/1.83.0/source/boost_1_83_0.zip" -OutFile boost.zip
+          New-Item -ItemType Directory -Force -Path C:\local | Out-Null
+          Expand-Archive -Path boost.zip -DestinationPath C:\local
+        }
+        echo "BOOST_ROOT=$boost_dir" >> $env:GITHUB_ENV
+
+    # Reuses compiled objects from earlier runs; unchanged files are not recompiled.
+    - name: ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: ${{ matrix.platform }}
+        max-size: 1G
 
     - name: MSVC environment (Windows)
       if: runner.os == 'Windows'
@@ -143,6 +159,7 @@ jobs:
         cmake -B build -G Ninja `
           -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl `
           -DCMAKE_BUILD_TYPE=Release `
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache `
           -DELEMENT_ENABLE_ASIO=ON `
           -DELEMENT_ENABLE_UPDATER=OFF `
           -DELEMENT_BUILD_PLUGINS=OFF `
@@ -157,6 +174,8 @@ jobs:
         if [ "$RUNNER_OS" = "macOS" ]; then EXTRA="-DCMAKE_OSX_ARCHITECTURES=arm64"; fi
         cmake -B build -G Ninja \
           -DCMAKE_BUILD_TYPE=Release $EXTRA \
+          -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+          -DCMAKE_OBJC_COMPILER_LAUNCHER=ccache -DCMAKE_OBJCXX_COMPILER_LAUNCHER=ccache \
           -DELEMENT_ENABLE_UPDATER=OFF \
           -DELEMENT_BUILD_PLUGINS=OFF \
           -DELEMENT_BUILD_TESTS=OFF

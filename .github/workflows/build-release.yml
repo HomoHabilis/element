@@ -30,6 +30,12 @@ on:
 permissions:
   contents: write   # the default token in a fork is read-only
 
+# A newer push to the same branch cancels the older test build.
+# Manual release runs are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'push' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
+
 jobs:
   prepare:
     runs-on: ubuntu-latest

@@ -32,19 +32,10 @@ public:
 
         To create a connection, use GraphNode::addConnection().
     */
-    struct Connection : public Arc
-    {
-    public:
-        Connection (uint32 sourceNode, uint32 sourcePort, uint32 destNode, uint32 destPort) noexcept;
-        Connection (const ValueTree props);
-
-    private:
-        friend class GraphNode;
-        JUCE_LEAK_DETECTOR (Connection)
-    };
+    using Connection = Arc;
 
     /** Deletes all nodes and connections from this graph.
-        Any Node)bjects in the graph will be removed.
+        Any Processors in the graph will be removed.
     */
     void clear();
 
@@ -221,7 +212,7 @@ private:
 
     Context& _context;
 
-    typedef ArcTable<Connection> LookupTable;
+    using LookupTable = ArcTable<Connection>;
     ReferenceCountedArray<Processor> nodes;
     OwnedArray<Connection> connections;
     uint32 ioNodes[10];

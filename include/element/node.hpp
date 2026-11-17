@@ -40,8 +40,6 @@ public:
             .setProperty (tags::flow, flow.toString(), nullptr);
     }
 
-    ~Port() {}
-
     /** Returns the ValueTree of the Node containing this port
         will not always be valid 
      */
@@ -100,9 +98,6 @@ public:
 
     /** Creates a node with specific type */
     Node (const juce::Identifier& nodeType);
-
-    /** Destructor */
-    ~Node() noexcept;
 
     //=========================================================================
     /** Returns true if the underlying data is probably a node */
@@ -442,8 +437,7 @@ public:
     juce::ValueTree getScriptsValueTree() const noexcept { return objectData.getChildWithName (tags::scripts); }
 
     //=========================================================================
-    const bool operator== (const Node& o) const { return this->objectData == o.objectData; }
-    const bool operator!= (const Node& o) const { return this->objectData != o.objectData; }
+    bool operator== (const Node& o) const { return this->objectData == o.objectData; }
 
     /** Iterate over all ValueTree's recursively */
     void forEach (std::function<void (const juce::ValueTree& tree)>) const;
@@ -559,13 +553,11 @@ private:
 class PortArray : public juce::Array<Port> {
 public:
     PortArray() {}
-    ~PortArray() {}
 };
 
 class NodeArray : public juce::Array<Node> {
 public:
     NodeArray() {}
-    ~NodeArray() {}
     void sortByName();
 };
 
@@ -577,11 +569,14 @@ struct ConnectionBuilder {
 
     ConnectionBuilder& operator= (const ConnectionBuilder& o)
     {
-        this->arcs = o.arcs;
-        this->target = o.target;
-        this->lastError = o.lastError;
-        this->portChannelMap.addCopiesOf (
-            o.portChannelMap, 0, o.portChannelMap.size());
+        if (this != &o) {
+            this->arcs = o.arcs;
+            this->target = o.target;
+            this->lastError = o.lastError;
+            this->portChannelMap.clearQuick (true);
+            this->portChannelMap.addCopiesOf (
+                o.portChannelMap, 0, o.portChannelMap.size());
+        }
         return *this;
     }
 

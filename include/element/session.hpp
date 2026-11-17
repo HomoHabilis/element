@@ -35,6 +35,9 @@ public:
             session.freezeChangeNotification = wasFrozen;
         }
 
+        ScopedFrozenLock (const ScopedFrozenLock&) = delete;
+        ScopedFrozenLock& operator= (const ScopedFrozenLock&) = delete;
+
     private:
         const Session& session;
         bool wasFrozen;
@@ -96,7 +99,7 @@ public:
 
     Node findNodeById (const juce::Uuid&);
 
-    typedef std::function<void (const juce::ValueTree& tree)> ValueTreeFunction;
+    using ValueTreeFunction = std::function<void (const juce::ValueTree& tree)>;
     void forEach (ValueTreeFunction handler) const;
 
     void setActiveGraph (int index);
@@ -145,7 +148,7 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Session);
 };
 
-typedef juce::ReferenceCountedObjectPtr<Session> SessionPtr;
-typedef SessionPtr SessionRef;
+using SessionPtr = juce::ReferenceCountedObjectPtr<Session>;
+using SessionRef = SessionPtr;
 
 } // namespace element
